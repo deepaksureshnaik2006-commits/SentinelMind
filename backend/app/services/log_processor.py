@@ -42,9 +42,9 @@ class LogProcessor:
                     if entry:
                         parsed_entries.append(entry)
             except Exception:
-                parsed_entries = self._parse_line_by_line(raw_content)
+                parsed_entries = self._parse_line_by_line(raw_content, filename)
         else:
-            parsed_entries = self._parse_line_by_line(raw_content)
+            parsed_entries = self._parse_line_by_line(raw_content, filename)
 
         if not parsed_entries:
             # Fallback if no specific format matched
@@ -96,7 +96,7 @@ class LogProcessor:
             context_data={k: v for k, v in item.items() if k not in ["message", "level", "timestamp", "service"]}
         )
 
-    def _parse_line_by_line(self, content: str) -> List[LogEntry]:
+    def _parse_line_by_line(self, content: str, filename: Optional[str] = "upload.log") -> List[LogEntry]:
         entries: List[LogEntry] = []
         lines = content.splitlines()
 
@@ -147,7 +147,7 @@ class LogProcessor:
                     elif "error" in trimmed.lower() or "exception" in trimmed.lower(): level = "ERROR"
                     elif "warn" in trimmed.lower(): level = "WARN"
 
-                    inherited_srv = entries[-1].service_name if entries else self._extract_service_name_fallback(trimmed, filename)
+                    inherited_srv = entries[-1].service_name if entries else self._extract_service_name_fallback(trimmed, filename or "upload.log")
                     entries.append(LogEntry(
                         id=str(uuid.uuid4()),
                         timestamp=datetime.utcnow(),
