@@ -1,0 +1,7 @@
+[
+  {"timestamp": "2026-11-07T07:30:00.120Z", "service": "api-gateway", "level": "INFO", "message": "Routing incoming ingress traffic"},
+  {"timestamp": "2026-11-07T07:30:15.450Z", "service": "api-gateway", "level": "WARN", "message": "Upstream service [inventory-svc] latency 8500ms exceeded p99 SLA (500ms)"},
+  {"timestamp": "2026-11-07T07:30:25.801Z", "service": "api-gateway", "level": "ERROR", "message": "HTTP 504 Gateway Timeout: Upstream inventory-svc failed to respond in 10000ms", "context": {"endpoint": "/api/v2/inventory/lock", "status": 504}},
+  {"timestamp": "2026-11-07T07:30:26.110Z", "service": "api-gateway", "level": "FATAL", "message": "Cascading timeout failure: 120 checkout requests dropped at edge gateway", "error_code": "GATEWAY_TIMEOUT"}
+]
+
