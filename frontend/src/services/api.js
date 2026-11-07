@@ -1,6 +1,10 @@
 import { supabase } from './supabase';
 
-const API_BASE = (import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace(/\/$/, '') : '') + '/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || '';
+const cleanApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
+const API_BASE = cleanApiUrl
+  ? (cleanApiUrl.endsWith('/api') ? cleanApiUrl : `${cleanApiUrl}/api`)
+  : '/api';
 
 /**
  * Multi-Tenant Authenticated Fetch:

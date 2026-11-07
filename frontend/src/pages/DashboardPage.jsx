@@ -40,13 +40,41 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const [analyticsData, incidentsData] = await Promise.all([
-        api.getDashboardAnalytics(),
-        api.getIncidents(),
+        api.getDashboardAnalytics().catch((e) => {
+          console.warn('Dashboard analytics API warning:', e);
+          return null;
+        }),
+        api.getIncidents().catch((e) => {
+          console.warn('Incidents API warning:', e);
+          return [];
+        }),
       ]);
-      setAnalytics(analyticsData);
-      setIncidents(incidentsData);
+      setAnalytics(analyticsData || {
+        active_incidents: 0,
+        mttr_minutes: 0,
+        avg_resolution_time_minutes: 0,
+        autonomous_resolution_rate: 0,
+        hindsight_memories_retained: 0,
+        total_incidents: 0,
+        resolved_incidents: 0,
+        service_distribution: [],
+        memory_statistics: { total_memories_retained: 0, successful_experiences: 0, is_live_hindsight: false }
+      });
+      setIncidents(incidentsData || []);
     } catch (err) {
       console.error('Failed to load dashboard:', err);
+      setAnalytics({
+        active_incidents: 0,
+        mttr_minutes: 0,
+        avg_resolution_time_minutes: 0,
+        autonomous_resolution_rate: 0,
+        hindsight_memories_retained: 0,
+        total_incidents: 0,
+        resolved_incidents: 0,
+        service_distribution: [],
+        memory_statistics: { total_memories_retained: 0, successful_experiences: 0, is_live_hindsight: false }
+      });
+      setIncidents([]);
     } finally {
       setLoading(false);
     }
