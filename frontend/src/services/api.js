@@ -96,7 +96,11 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ raw_logs: rawLogs, file_name: fileName }),
     });
-    if (!res.ok) throw new Error('Log analysis failed');
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => null);
+      const detail = errBody?.detail || res.statusText || 'Log analysis failed';
+      throw new Error(`Log analysis error (${res.status}): ${detail}`);
+    }
     return res.json();
   },
 
