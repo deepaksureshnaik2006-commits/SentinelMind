@@ -44,7 +44,16 @@ class InMemoryRepository:
         if not user_id:
             return {}
         self.ensure_user_seeded(user_id)
-        return self.incidents_by_user.setdefault(user_id, {})
+        user_dict = self.incidents_by_user.setdefault(user_id, {})
+        # Hydrate from Supabase database if in-memory cache is empty for this user
+        if len(user_dict) == 0 and supabase_service.is_configured():
+            try:
+                db_incidents = supabase_service.fetch_incidents_for_user(user_id)
+                for inc in db_incidents:
+                    user_dict[inc["id"]] = inc
+            except Exception:
+                pass
+        return user_dict
 
     def list_incidents(
         self,
@@ -221,6 +230,11 @@ class InMemoryRepository:
         user_dict = self._get_user_incidents_dict(user_id)
         if incident_id in user_dict:
             del user_dict[incident_id]
+            if supabase_service.is_configured():
+                try:
+                    supabase_service.delete_incident(incident_id, user_id=user_id)
+                except Exception:
+                    pass
             return True
         return False
 
@@ -243,6 +257,14 @@ class InMemoryRepository:
             return []
         self.ensure_user_seeded(user_id)
         user_services = list(self.services_by_user.get(user_id, []))
+        if len(user_services) == 0 and supabase_service.is_configured():
+            try:
+                db_services = supabase_service.fetch_services_for_user(user_id)
+                if db_services:
+                    self.services_by_user[user_id] = db_services
+                    user_services = list(db_services)
+            except Exception:
+                pass
         user_incidents = self.list_incidents(user_id=user_id)
 
         # Merge services referenced in user's actual incidents
