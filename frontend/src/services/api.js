@@ -211,8 +211,9 @@ export const api = {
   },
 
   // Recommendations
-  async getRecommendations(incidentId) {
-    const res = await authFetch(`${API_BASE}/recommendations/${incidentId}`);
+  async getRecommendations(incidentId, refresh = false) {
+    const url = refresh ? `${API_BASE}/recommendations/${incidentId}?refresh=true` : `${API_BASE}/recommendations/${incidentId}`;
+    const res = await authFetch(url);
     if (!res.ok) throw new Error('Failed to fetch recommendations');
     return res.json();
   },

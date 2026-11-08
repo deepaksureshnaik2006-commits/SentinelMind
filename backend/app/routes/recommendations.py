@@ -10,6 +10,7 @@ router = APIRouter(prefix="/api/recommendations", tags=["recommendations"])
 @router.get("/{incident_id}")
 def get_incident_recommendations(
     incident_id: str,
+    refresh: bool = False,
     current_user: UserContext = Depends(get_current_user)
 ):
     inc = repository.get_incident(incident_id, user_id=current_user.id)
@@ -20,7 +21,7 @@ def get_incident_recommendations(
         )
     
     recs = repository.get_recommendations(inc["id"], user_id=current_user.id)
-    if not recs:
+    if not recs or refresh:
         # Generate fresh recommendations strictly within user's isolated memory bank
         fresh_recs = resolution_engine.generate_recommendations(
             incident_id=inc["id"],

@@ -48,11 +48,15 @@ export default function ResolutionIntelligencePage() {
     }
   };
 
-  const loadRecommendations = async (id) => {
+  const loadRecommendations = async (id, forceRefresh = false) => {
+    if (!id) return;
     setLoading(true);
     try {
-      const recs = await api.getRecommendations(id);
+      const recs = await api.getRecommendations(id, forceRefresh);
       setRecommendations(recs);
+      if (forceRefresh) {
+        showToast('Re-evaluated recommendations with latest Hindsight memories', 'success');
+      }
     } catch (err) {
       showToast('Failed to load recommendations', 'error');
     } finally {
@@ -106,7 +110,7 @@ export default function ResolutionIntelligencePage() {
           </p>
         </div>
 
-        {/* Incident Selector */}
+        {/* Incident Selector & Re-evaluate */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-[#8BA8C2] font-mono uppercase tracking-wider font-medium">Incident:</span>
           <select
@@ -124,6 +128,16 @@ export default function ResolutionIntelligencePage() {
               ))
             )}
           </select>
+
+          <button
+            onClick={() => loadRecommendations(activeIncidentId, true)}
+            disabled={!activeIncidentId || loading}
+            className="px-3 py-1.5 rounded-sm bg-[#070D18] hover:bg-[#168DCE]/20 border border-[#168DCE]/40 text-[#38BDF8] font-mono text-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+            title="Re-query Hindsight memory bank for newly retained operational experiences"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">RE-EVALUATE MEMORY</span>
+          </button>
         </div>
       </div>
 
@@ -270,9 +284,14 @@ export default function ResolutionIntelligencePage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[#8BA8C2] italic text-[11px] font-mono">
-                        No prior identical successes retained yet.
-                      </p>
+                      <div className="space-y-1.5 font-mono text-[11px]">
+                        <p className="text-[#8BA8C2] italic">
+                          No prior identical successes retained yet (Cold-start hypothesis).
+                        </p>
+                        <p className="text-[10px] text-[#38BDF8]/80 leading-relaxed bg-[#0A1320] p-2 rounded-sm border border-[#168DCE]/25">
+                          💡 Once you resolve an incident and retain it in Hindsight, future recurring incidents on this service will automatically populate here with verified historical resolutions.
+                        </p>
+                      </div>
                     )}
                   </div>
 
