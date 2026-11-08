@@ -66,8 +66,8 @@ async def get_current_user(request: Request) -> UserContext:
     if not token or token in ["undefined", "null", "Bearer"]:
         return UserContext(user_id="demo-operator-user", email="operator@sentinelmind.ai", role="Site Reliability Engineer (SRE)")
 
-    # 1. Attempt verification via live Supabase Client
-    if supabase_service.client:
+    # 1. Attempt verification via live Supabase Client if available
+    if getattr(supabase_service, "client", None):
         try:
             user_resp = supabase_service.client.auth.get_user(token)
             if user_resp and user_resp.user:

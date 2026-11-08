@@ -45,3 +45,4 @@ def test_supabase_persistence():
 
 if __name__ == "__main__":
     test_supabase_persistence()
+

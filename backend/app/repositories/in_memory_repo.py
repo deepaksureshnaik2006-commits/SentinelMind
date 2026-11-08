@@ -334,11 +334,9 @@ class InMemoryRepository:
         user_services.append(new_service)
 
         # Sync to Supabase if configured
-        if supabase_service.is_configured() and supabase_service.client:
+        if supabase_service.is_configured():
             try:
-                sb_payload = dict(new_service)
-                sb_payload["organization_id"] = user_id
-                supabase_service.client.table("services").upsert(sb_payload).execute()
+                supabase_service.upsert_service(new_service, user_id)
             except Exception:
                 pass
 
@@ -352,9 +350,9 @@ class InMemoryRepository:
         before_len = len(services)
         self.services_by_user[user_id] = [s for s in services if s.get("id") != service_id and s.get("name") != service_id]
         deleted = len(self.services_by_user[user_id]) < before_len
-        if deleted and supabase_service.is_configured() and supabase_service.client:
+        if deleted and supabase_service.is_configured():
             try:
-                supabase_service.client.table("services").delete().eq("id", service_id).eq("organization_id", user_id).execute()
+                supabase_service.delete_service(service_id, user_id)
             except Exception:
                 pass
         return deleted

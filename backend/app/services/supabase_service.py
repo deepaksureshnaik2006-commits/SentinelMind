@@ -17,6 +17,7 @@ class SupabaseService:
     def __init__(self):
         self.url = (settings.SUPABASE_URL or "").rstrip("/")
         self.key = settings.SUPABASE_KEY or ""
+        self.client = None
         self._http: Optional[httpx.Client] = None
         if self.is_configured():
             self._http = httpx.Client(
