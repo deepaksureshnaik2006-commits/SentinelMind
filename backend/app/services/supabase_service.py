@@ -15,7 +15,9 @@ class SupabaseService:
     def _init_client(self):
         if self.url and self.key:
             try:
-                from supabase import create_client
+                import importlib
+                supabase_mod = importlib.import_module("supabase")
+                create_client = getattr(supabase_mod, "create_client")
                 self.client = create_client(self.url, self.key)
                 logger.info("Supabase client initialized successfully with endpoint: %s", self.url)
             except Exception as e:

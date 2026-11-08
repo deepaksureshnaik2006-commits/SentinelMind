@@ -1,0 +1,9 @@
+{
+  "venvPath": "C:\\Users\\deepa\\AppData\\Local\\Programs\\Python",
+  "pythonPath": "C:\\Users\\deepa\\AppData\\Local\\Programs\\Python\\Python311\\python.exe",
+  "extraPaths": [
+    "C:\\Users\\deepa\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages",
+    "./backend"
+  ],
+  "reportMissingImports": "none"
+}
