@@ -99,9 +99,11 @@ def resolve_incident(
         )
         return {
             "status": "resolved",
+            "incident": result["incident"],
             "incident_id": incident_id,
             "resolution_outcome": outcome,
             "hindsight_memory_id": result["hindsight"].get("memory_id"),
+            "retain_result": result["hindsight"],
             "user_id": current_user.id
         }
     except KeyError:

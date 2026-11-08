@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export default function IncidentDetailPage() {
-  const { selectedIncidentId, navigateTo, showToast, triggerRefresh } = useApp();
+  const { selectedIncidentId, latestIncidentId, navigateTo, showToast, triggerRefresh } = useApp();
   const [incident, setIncident] = useState(null);
   const [incidentLogs, setIncidentLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(true);
@@ -33,12 +33,25 @@ export default function IncidentDetailPage() {
   });
 
   useEffect(() => {
-    if (selectedIncidentId) {
-      loadIncident(selectedIncidentId);
+    const idToLoad = selectedIncidentId || latestIncidentId;
+    if (idToLoad) {
+      loadIncident(idToLoad);
+    } else {
+      api.getIncidents().then((list) => {
+        if (list && list.length > 0) {
+          loadIncident(list[0].id);
+        } else {
+          setLoading(false);
+        }
+      }).catch(() => setLoading(false));
     }
-  }, [selectedIncidentId]);
+  }, [selectedIncidentId, latestIncidentId]);
 
   const loadIncident = async (id) => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [data, logs] = await Promise.all([
@@ -47,14 +60,14 @@ export default function IncidentDetailPage() {
       ]);
       setIncident(data);
       setIncidentLogs(Array.isArray(logs) ? logs : []);
-      if (data.applied_resolution) {
+      if (data && data.applied_resolution) {
         setResolutionData({
           applied_resolution: data.applied_resolution,
           resolution_outcome: data.resolution_outcome || 'success',
           engineer_feedback: '',
           time_to_fix_minutes: data.resolution_time_minutes || 15
         });
-      } else if (data.recommendations && data.recommendations.length > 0) {
+      } else if (data && data.recommendations && data.recommendations.length > 0) {
         // Automatically pre-fill the form with top AI recommendation
         const top = data.recommendations[0];
         const stepSummary = top.steps && top.steps.length > 0 ? ` (${top.steps[0]})` : '';
@@ -93,8 +106,13 @@ export default function IncidentDetailPage() {
     setResolving(true);
     try {
       const res = await api.resolveIncident(incident.id, resolutionData);
-      showToast(`Incident resolved & retained in Hindsight memory (${res.retain_result?.memory_id})`, 'success');
-      setIncident(res.incident);
+      const memId = res?.hindsight_memory_id || res?.retain_result?.memory_id || res?.incident?.hindsight_memory_id || 'retained';
+      showToast(`Incident resolved & retained in Hindsight memory (${memId})`, 'success');
+      if (res && res.incident) {
+        setIncident(res.incident);
+      } else {
+        await loadIncident(incident.id);
+      }
       triggerRefresh();
     } catch (err) {
       showToast(err.message || 'Failed to submit resolution', 'error');
@@ -114,12 +132,30 @@ export default function IncidentDetailPage() {
     }
   };
 
-  if (loading || !incident) {
+  if (loading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="flex items-center gap-2.5 text-[#8BA8C2] text-xs font-mono">
           <BrainCircuit className="w-4 h-4 animate-spin text-[#38BDF8]" />
           <span>SYNCHRONIZING INCIDENT TELEMETRY WORKSPACE...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!incident) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto font-sans space-y-4">
+        <div className="hud-bracket bg-[#0A1320] border border-[#168DCE]/35 rounded-sm p-12 text-center text-xs text-[#8BA8C2] font-mono shadow-[0_0_15px_rgba(22,141,206,0.12)]">
+          No incident selected or incident not found. Upload system logs to automatically detect and triage incidents.
+        </div>
+        <div className="text-center">
+          <button
+            onClick={() => navigateTo('incidents')}
+            className="px-4 py-2 rounded-sm bg-[#168DCE]/20 hover:bg-[#168DCE]/30 border border-[#38BDF8] text-[#38BDF8] font-mono text-xs font-semibold cursor-pointer"
+          >
+            ← Back to Incident Ledger
+          </button>
         </div>
       </div>
     );
