@@ -52,7 +52,7 @@ export default function MemoryExplorerPage() {
       const fromServices = services.map((s) => s.name || s.service_name || s.label);
       const fromTimeline = timeline.map((e) => e.service_name);
       const unique = Array.from(new Set([...fromServices, ...fromTimeline].filter(Boolean))).sort();
-      setAvailableServices(unique.length > 0 ? unique : ['cache-layer', 'payment-service', 'api-gateway', 'billing-engine']);
+      setAvailableServices(unique);
     } catch (err) {
       console.error('Failed to load memory timeline:', err);
     } finally {
@@ -177,7 +177,9 @@ export default function MemoryExplorerPage() {
           {/* Chronological Evolution Timeline */}
           {filteredEvents.length === 0 ? (
             <div className="hud-bracket p-12 text-center text-xs text-[#8BA8C2] border border-[#168DCE]/35 rounded-sm bg-[#0A1320] font-mono">
-              No memory experiences match filter criteria.
+              {timelineEvents.length === 0
+                ? "No operational memories retained yet. Upload system logs to automatically triage and retain verified incident resolutions."
+                : "No memory experiences match filter criteria."}
             </div>
           ) : (
             <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:inset-0 before:left-3 sm:before:left-4 before:w-px before:bg-[#168DCE]/30">

@@ -33,7 +33,7 @@ def _persist_analysis_and_logs(result: LogAnalysisResult, user: UserContext) -> 
         }, user_id=user.id)
 
     inc_id = target_incident["id"]
-    inc_num = target_incident.get("incident_number", "INC-2026-104")
+    inc_num = target_incident.get("incident_number") or f"INC-2026-{inc_id[:6]}"
 
     # 2. Formulate recommendations in user's isolated memory bank
     existing_recs = repository.get_recommendations(inc_id, user_id=user.id)

@@ -29,7 +29,7 @@ class SimulatorService:
                 title="Enable Circuit Breaker Fallback & Extend Proxy Timeouts",
                 action="Configure Envoy proxy connect/read timeout from 10s to 25s and activate circuit breaker fallback routing",
                 description="Prevents cascading upstream connection timeouts from degrading the edge ingress proxy and returns cached fallback payloads.",
-                historical_evidence="Validated in historical incident INC-2026-102 (api-gateway) with 91% verified resolution success.",
+                historical_evidence="Validated in historical operational benchmark with 91% verified resolution success.",
                 predicted_outcome="success",
                 success_probability=92.0,
                 potential_risks=[
@@ -42,7 +42,7 @@ class SimulatorService:
                     "resource_impact": "Negligible (+20MB per Envoy worker)"
                 },
                 reasoning="Addresses edge 504 timeouts by allowing upstream services adequate execution time while isolating lagging endpoints.",
-                relevant_past_incidents=["INC-2026-102"]
+                relevant_past_incidents=[]
             ))
 
             options.append(SimulationOption(
@@ -113,9 +113,9 @@ class SimulatorService:
             options.append(SimulationOption(
                 id="opt_2",
                 title="Force Kill & Restart Invoicing Worker Pods",
-                action="Execute kubectl rollout restart deployment/billing-engine during active invoicing run",
+                action="Execute kubectl rollout restart deployment on worker pods during active batch run",
                 description="Terminate all running workers to clear locked sockets.",
-                historical_evidence="Documented FAILURE in historical incident INC-2026-103 (billing-engine). Dropped in-flight batches, corrupted billing state, and triggered immediate thundering-herd starvation on restart.",
+                historical_evidence="Documented failure in operational benchmark: Dropped in-flight batches, corrupted billing state, and triggered immediate thundering-herd starvation on restart.",
                 predicted_outcome="failure",
                 success_probability=22.0,
                 potential_risks=[
@@ -128,7 +128,7 @@ class SimulatorService:
                     "resource_impact": "CPU thrashing during reboot"
                 },
                 reasoning="Historical precedent proves restarting pods without scaling the thread pool or chunking batches causes instant re-locking.",
-                relevant_past_incidents=["INC-2026-103"]
+                relevant_past_incidents=[]
             ))
 
             options.append(SimulationOption(
@@ -227,13 +227,13 @@ class SimulatorService:
                 title="Apply Allkeys-LRU Eviction Policy & Scale Quota",
                 action="redis-cli CONFIG SET maxmemory-policy allkeys-lru and expand memory ceiling by 2GB",
                 description="Allow automatic eviction of least recently used keys to free up space for incoming writes without wiping sessions.",
-                historical_evidence="Validated in INC-2026-101 (cache-layer) with 100% resolution success.",
+                historical_evidence="Validated in operational benchmark with 100% resolution success.",
                 predicted_outcome="success",
                 success_probability=96.0,
                 potential_risks=["Temporary slight cache miss rate increase for cold sessions."],
                 expected_impact={"downtime": "0s", "throughput_recovery": "Instant", "resource_impact": "Stabilizes RAM at 85%"},
                 reasoning="Instantly relieves write rejection without dropping the cluster.",
-                relevant_past_incidents=["INC-2026-101"]
+                relevant_past_incidents=[]
             ))
 
             options.append(SimulationOption(

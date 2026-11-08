@@ -406,8 +406,15 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#168DCE]/20 text-[#E2F3FF]">
-              {incidents.slice(0, 5).map((inc) => (
-                <tr key={inc.id} className="hover:bg-[#101D2E] transition-colors">
+              {incidents.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-8 text-center text-xs text-[#8BA8C2] font-mono">
+                    No operational incidents recorded yet. Upload system logs to automatically detect and triage incidents.
+                  </td>
+                </tr>
+              ) : (
+                incidents.slice(0, 5).map((inc) => (
+                  <tr key={inc.id} className="hover:bg-[#101D2E] transition-colors">
                   <td className="py-3 px-5 font-mono font-medium text-[#38BDF8] whitespace-nowrap">
                     {inc.incident_number}
                   </td>
@@ -442,7 +449,7 @@ export default function DashboardPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              )))}
             </tbody>
           </table>
         </div>

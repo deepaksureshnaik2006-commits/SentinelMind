@@ -192,7 +192,7 @@ class SupabaseService:
             if not valid_inc_id:
                 try:
                     new_id = str(uuid.uuid4())
-                    inc_num = str(incident_id) if "INC-" in str(incident_id) else "INC-2026-104"
+                    inc_num = str(incident_id) if "INC-" in str(incident_id) else f"INC-2026-{uuid.uuid4().hex[:4].upper()}"
                     self.client.table("incidents").insert({
                         "id": new_id,
                         "incident_number": inc_num,

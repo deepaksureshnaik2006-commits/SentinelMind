@@ -114,11 +114,15 @@ export default function ResolutionIntelligencePage() {
             onChange={(e) => setActiveIncidentId(e.target.value)}
             className="bg-[#070D18] border border-[#168DCE]/40 rounded-sm px-3 py-1.5 text-xs text-[#E2F3FF] focus:outline-none focus:border-[#38BDF8] font-mono cursor-pointer"
           >
-            {incidents.map((inc) => (
-              <option key={inc.id} value={inc.id}>
-                {inc.incident_number} — {inc.service_name} ({inc.severity})
-              </option>
-            ))}
+            {incidents.length === 0 ? (
+              <option value="">No Incidents Available</option>
+            ) : (
+              incidents.map((inc) => (
+                <option key={inc.id} value={inc.id}>
+                  {inc.incident_number} — {inc.service_name} ({inc.severity})
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>
@@ -145,7 +149,9 @@ export default function ResolutionIntelligencePage() {
         </div>
       ) : recommendations.length === 0 ? (
         <div className="hud-bracket bg-[#0A1320] border border-[#168DCE]/35 rounded-sm p-12 text-center text-xs text-[#8BA8C2] font-mono shadow-[0_0_15px_rgba(22,141,206,0.12)]">
-          No recommendations formulated for this incident yet.
+          {incidents.length === 0
+            ? "No operational incidents recorded yet. Upload system logs to automatically detect failure signatures and formulate resolution recommendations."
+            : "No recommendations formulated for this incident yet."}
         </div>
       ) : (
         <div className="space-y-6">

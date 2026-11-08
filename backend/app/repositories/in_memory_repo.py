@@ -4,33 +4,6 @@ from typing import List, Dict, Any, Optional
 from ..services.hindsight_service import hindsight_service
 from ..services.supabase_service import supabase_service
 
-LOG_CACHE_OOM = """2026-11-07T06:12:10.012Z [cache-layer] [INFO] Cache warming completed for tenant_eu_west
-2026-11-07T06:15:32.410Z [cache-layer] [WARN] Memory usage at 92.4% (maxmemory=4096MB, used_memory=3785MB)
-2026-11-07T06:16:01.890Z [cache-layer] [ERROR] RedisCommandExecutionException: OOM command not allowed when used memory > 'maxmemory'.
-2026-11-07T06:16:02.102Z [cache-layer] [ERROR] Eviction policy 'noeviction' rejected SETNX session:usr_88291
-2026-11-07T06:16:05.450Z [cache-layer] [FATAL] User session validation failed across all nodes due to Redis OOM."""
-
-LOG_PAYMENT_TIMEOUT = """2026-11-07T08:14:02.102Z [payment-service] [INFO] Handling checkout request req_9921 for user usr_4102
-2026-11-07T08:14:05.312Z [payment-service] [WARN] HikariPool-1 - Connection pool acquisition approaching timeout (2850ms elapsed, 10/10 active connections)
-2026-11-07T08:14:07.450Z [payment-service] [ERROR] org.postgresql.util.PSQLException: Connection to 10.0.4.12:5432 refused or timed out after 30000ms.
-2026-11-07T08:14:07.452Z [payment-service] [ERROR] HikariPool-1 - Connection is not available, request timed out after 30002ms (active=10, idle=0, waiting=47).
-2026-11-07T08:14:07.460Z [payment-service] [FATAL] Transaction failed: Database connection timeout during lock acquisition on orders table.
-2026-11-07T08:14:08.001Z [payment-service] [ERROR] HTTP 500 Internal Server Error returned to checkout gateway for 47 queued requests.
-2026-11-07T08:14:10.120Z [payment-service] [ERROR] CircuitBreaker 'PostgresOrdersDB' transitioned to OPEN state due to 98% error rate in sliding window."""
-
-LOG_GATEWAY_504 = """[
-  {"timestamp": "2026-11-07T07:30:00.120Z", "service": "api-gateway", "level": "INFO", "message": "Routing incoming ingress traffic"},
-  {"timestamp": "2026-11-07T07:30:15.450Z", "service": "api-gateway", "level": "WARN", "message": "Upstream service [inventory-svc] latency 8500ms exceeded SLA"},
-  {"timestamp": "2026-11-07T07:30:30.100Z", "service": "api-gateway", "level": "ERROR", "message": "HTTP 504 Gateway Timeout: Upstream [inventory-svc] dropped connection on port 8080"}
-]"""
-
-LOG_BILLING_TIMEOUT = """2026-11-07T10:22:15.890Z [billing-engine] [INFO] Processing recurring subscription renewals batch batch_nov_07
-2026-11-07T10:22:20.104Z [billing-engine] [WARN] Connection lease wait time elevated: 4200ms on primary pg_pool
-2026-11-07T10:22:25.401Z [billing-engine] [ERROR] PSQLException: HikariPool-Billing - Connection pool exhausted (active=15, idle=0, waiting=62).
-2026-11-07T10:22:25.405Z [billing-engine] [ERROR] Connection acquisition timed out after 30000ms. Could not checkout connection for invoice #88129.
-2026-11-07T10:22:26.012Z [billing-engine] [FATAL] Critical billing failure: 62 subscription renewal transactions failed due to database connection timeout.
-2026-11-07T10:22:28.150Z [billing-engine] [ERROR] Worker pool worker-group-3 stalled waiting for database handle."""
-
 class InMemoryRepository:
     """
     Multi-Tenant Isolated Repository Layer.
@@ -58,119 +31,14 @@ class InMemoryRepository:
         self.services_by_user: Dict[str, List[Dict[str, Any]]] = {}
 
     def ensure_user_seeded(self, user_id: str):
-        """Seeds the 4 default baseline operational logs, incidents, and services for the user's workspace."""
+        """Initializes empty workspace data structures strictly isolated by authenticated user_id."""
         if not user_id:
             return
-        if user_id in self.incidents_by_user and len(self.incidents_by_user[user_id]) > 0:
-            return
-
-        now = datetime.utcnow()
-        user_dict = self.incidents_by_user.setdefault(user_id, {})
-
-        inc101_id = f"inc_101_{user_id[:8]}"
-        inc102_id = f"inc_102_{user_id[:8]}"
-        inc103_id = f"inc_103_{user_id[:8]}"
-        inc104_id = f"inc_104_{user_id[:8]}"
-
-        user_dict[inc101_id] = {
-            "id": inc101_id,
-            "incident_number": "INC-2026-101",
-            "user_id": user_id,
-            "service_name": "cache-layer",
-            "title": "Redis Cache Saturation & OOM Under Peak Load",
-            "description": "User session validation failed across cluster due to Redis OOM (used_memory=3785MB/4096MB) under 'noeviction' policy.",
-            "severity": "high",
-            "status": "resolved",
-            "resolution_outcome": "success",
-            "resolution_time_minutes": 12,
-            "root_cause_summary": "In-memory cache saturation reaching 92.4% maxmemory ceiling with 'noeviction' policy preventing automated LRU key release.",
-            "applied_resolution": "Applied allkeys-lru eviction policy and expanded cache memory quota by 2GB.",
-            "feedback_notes": "RAM stabilized at 82% within 15 seconds of applying allkeys-lru policy without dropping active sessions.",
-            "tags": ["cache-layer", "redis", "oom", "cache", "allkeys-lru", "eviction"],
-            "detected_at": (now - timedelta(days=5)).isoformat(),
-            "created_at": (now - timedelta(days=5)).isoformat(),
-            "resolved_at": (now - timedelta(days=5, minutes=-12)).isoformat(),
-            "applied_actions": ["redis-cli CONFIG SET maxmemory-policy allkeys-lru", "redis-cli CONFIG SET maxmemory 6gb"]
-        }
-
-        user_dict[inc102_id] = {
-            "id": inc102_id,
-            "incident_number": "INC-2026-102",
-            "user_id": user_id,
-            "service_name": "payment-service",
-            "title": "HikariPool Connection Pool Exhaustion on Checkout Surge",
-            "description": "Connection pool acquisition timeout after 30000ms with 47 queued checkout transactions failing with HTTP 500 error.",
-            "severity": "critical",
-            "status": "resolved",
-            "resolution_outcome": "success",
-            "resolution_time_minutes": 18,
-            "root_cause_summary": "HikariPool maximum connection pool ceiling exhausted (10/10 active connections, 47 queued) during flash checkout surge.",
-            "applied_resolution": "Scaled HikariPool maximumPoolSize from 10 to 25 and tuned connection lease timeout parameters.",
-            "feedback_notes": "Checkout queue drained in under 2 minutes after increasing maximum pool size to 25. Zero dropped checkouts.",
-            "tags": ["payment-service", "database", "pool", "timeout", "hikaripool", "postgres"],
-            "detected_at": (now - timedelta(days=3)).isoformat(),
-            "created_at": (now - timedelta(days=3)).isoformat(),
-            "resolved_at": (now - timedelta(days=3, minutes=-18)).isoformat(),
-            "applied_actions": ["Set maximumPoolSize=25", "Set connectionTimeout=15000", "kubectl rollout restart deployment/payment-service"]
-        }
-
-        user_dict[inc103_id] = {
-            "id": inc103_id,
-            "incident_number": "INC-2026-103",
-            "user_id": user_id,
-            "service_name": "api-gateway",
-            "title": "Edge Ingress Gateway 504 Upstream Drop",
-            "description": "Edge ingress router returned HTTP 504 Gateway Timeout: Upstream inventory-svc dropped connection on port 8080 due to 8500ms latency.",
-            "severity": "medium",
-            "status": "resolved",
-            "resolution_outcome": "success",
-            "resolution_time_minutes": 22,
-            "root_cause_summary": "Upstream microservice (inventory-svc) latency exceeded ingress gateway proxy timeout under heavy concurrent query load.",
-            "applied_resolution": "Scaled upstream inventory-svc pods to 4 replicas and adjusted edge gateway proxy timeout to 15s.",
-            "feedback_notes": "Latency normalized under 110ms across edge ingress routes after pod replication.",
-            "tags": ["api-gateway", "ingress", "504", "timeout", "inventory-svc", "kubernetes"],
-            "detected_at": (now - timedelta(days=1)).isoformat(),
-            "created_at": (now - timedelta(days=1)).isoformat(),
-            "resolved_at": (now - timedelta(days=1, minutes=-22)).isoformat(),
-            "applied_actions": ["kubectl scale deployment inventory-svc --replicas=4", "nginx -s reload"]
-        }
-
-        user_dict[inc104_id] = {
-            "id": inc104_id,
-            "incident_number": "INC-2026-104",
-            "user_id": user_id,
-            "service_name": "billing-engine",
-            "title": "Recurrent Database Connection Timeout on Invoice Batch",
-            "description": "Critical billing failure: 62 subscription renewal transactions failed due to database connection timeout (HikariPool-Billing active=15, waiting=62).",
-            "severity": "high",
-            "status": "investigating",
-            "resolution_outcome": None,
-            "resolution_time_minutes": None,
-            "root_cause_summary": "Batch renewal job concurrently leasing all 15 database handles with unindexed invoice table queries.",
-            "applied_resolution": None,
-            "feedback_notes": None,
-            "tags": ["billing-engine", "database", "timeout", "pool", "hikaripool", "billing"],
-            "detected_at": (now - timedelta(hours=4)).isoformat(),
-            "created_at": (now - timedelta(hours=4)).isoformat()
-        }
-
-        # Store logs for each incident
-        self.save_logs(inc101_id, [{"timestamp": (now - timedelta(days=5)).isoformat(), "raw": LOG_CACHE_OOM}], user_id=user_id)
-        self.save_logs(inc102_id, [{"timestamp": (now - timedelta(days=3)).isoformat(), "raw": LOG_PAYMENT_TIMEOUT}], user_id=user_id)
-        self.save_logs(inc103_id, [{"timestamp": (now - timedelta(days=1)).isoformat(), "raw": LOG_GATEWAY_504}], user_id=user_id)
-        self.save_logs(inc104_id, [{"timestamp": (now - timedelta(hours=4)).isoformat(), "raw": LOG_BILLING_TIMEOUT}], user_id=user_id)
-
-        # Populate user's operational infrastructure microservices
-        self.services_by_user[user_id] = [
-            {"id": f"srv_cache_{user_id[:8]}", "user_id": user_id, "name": "cache-layer", "tier": "tier-1", "environment": "production", "description": "Redis distributed cluster and session cache", "created_at": (now - timedelta(days=30)).isoformat()},
-            {"id": f"srv_payment_{user_id[:8]}", "user_id": user_id, "name": "payment-service", "tier": "tier-1", "environment": "production", "description": "Checkout and payment authorization gateway", "created_at": (now - timedelta(days=30)).isoformat()},
-            {"id": f"srv_gateway_{user_id[:8]}", "user_id": user_id, "name": "api-gateway", "tier": "tier-1", "environment": "production", "description": "Edge ingress routing and SSL termination", "created_at": (now - timedelta(days=30)).isoformat()},
-            {"id": f"srv_billing_{user_id[:8]}", "user_id": user_id, "name": "billing-engine", "tier": "tier-2", "environment": "production", "description": "Subscription billing ledger and invoice generator", "created_at": (now - timedelta(days=30)).isoformat()}
-        ]
-
-        # Ensure user's Hindsight memory bank is populated
-        user_bank_id = hindsight_service.get_user_bank_id(user_id)
-        hindsight_service.ensure_bank_seeded(user_bank_id)
+        self.incidents_by_user.setdefault(user_id, {})
+        self.services_by_user.setdefault(user_id, [])
+        self.logs_by_user.setdefault(user_id, {})
+        self.recommendations_by_user.setdefault(user_id, {})
+        self.feedback_by_user.setdefault(user_id, {})
 
     def _get_user_incidents_dict(self, user_id: Optional[str]) -> Dict[str, Dict[str, Any]]:
         if not user_id:

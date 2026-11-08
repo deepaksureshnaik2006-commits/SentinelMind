@@ -99,11 +99,15 @@ export default function WhatIfSimulatorPage() {
             onChange={handleIncidentChange}
             className="bg-[#070D18] border border-[#168DCE]/40 rounded-sm px-3 py-1.5 text-xs text-[#E2F3FF] focus:outline-none focus:border-[#38BDF8] font-mono cursor-pointer"
           >
-            {incidents.map((inc) => (
-              <option key={inc.id} value={inc.id}>
-                {inc.incident_number} — {inc.service_name}
-              </option>
-            ))}
+            {incidents.length === 0 ? (
+              <option value="">No Incidents Available</option>
+            ) : (
+              incidents.map((inc) => (
+                <option key={inc.id} value={inc.id}>
+                  {inc.incident_number} — {inc.service_name}
+                </option>
+              ))
+            )}
           </select>
         </div>
       </div>
@@ -255,7 +259,11 @@ export default function WhatIfSimulatorPage() {
             </div>
           )}
         </div>
-      ) : null}
+      ) : (
+        <div className="hud-bracket bg-[#0A1320] border border-[#168DCE]/35 rounded-sm p-12 text-center text-xs text-[#8BA8C2] font-mono shadow-[0_0_15px_rgba(22,141,206,0.12)]">
+          No operational incidents recorded yet. Upload system logs to run what-if simulation modeling on active failure modes.
+        </div>
+      )}
     </div>
   );
 }

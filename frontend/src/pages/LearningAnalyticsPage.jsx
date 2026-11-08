@@ -321,7 +321,12 @@ export default function LearningAnalyticsPage() {
           </div>
 
           <div className="space-y-4">
-            {learningData.comparison_cases?.map((c, idx) => (
+            {(!learningData.comparison_cases || learningData.comparison_cases.length === 0) ? (
+              <div className="hud-bracket bg-[#0A1320] border border-[#168DCE]/35 rounded-sm p-12 text-center text-xs text-[#8BA8C2] font-mono shadow-[0_0_15px_rgba(22,141,206,0.12)]">
+                No comparative operational scenarios yet. Upload logs and resolve incidents to compare cold-start responses against memory-assisted resolutions.
+              </div>
+            ) : (
+              learningData.comparison_cases.map((c, idx) => (
               <div key={idx} className="hud-bracket bg-[#0A1320] border border-[#168DCE]/35 rounded-sm p-6 space-y-4 shadow-[0_0_15px_rgba(22,141,206,0.12)]">
                 <div>
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-sm bg-[#070D18] text-[#38BDF8] border border-[#168DCE]/40 uppercase tracking-wide font-semibold">
@@ -394,7 +399,7 @@ export default function LearningAnalyticsPage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       )}

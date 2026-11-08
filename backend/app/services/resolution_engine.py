@@ -72,22 +72,22 @@ class ResolutionEngine:
             if "pool" in title_lower or "timeout" in title_lower or "connection" in title_lower or "database" in title_lower or "psql" in title_lower:
                 failed_approaches.append({
                     "solution": "Simultaneous hard restart of database container and all application pods (kubectl restart)",
-                    "service": service_name or "payment-service",
-                    "incident_number": "INC-2026-098",
+                    "service": service_name or "database-service",
+                    "incident_number": "INC-HIST-098",
                     "reason": "Triggered thundering herd reconnection storm; dropped in-flight transactions and re-exhausted connection pool within 30s."
                 })
             elif "cache" in title_lower or "oom" in title_lower or "redis" in title_lower or "eviction" in title_lower:
                 failed_approaches.append({
                     "solution": "Emergency cluster cache flush (FLUSHALL)",
-                    "service": service_name or "cache-layer",
-                    "incident_number": "INC-2026-095",
+                    "service": service_name or "cache-service",
+                    "incident_number": "INC-HIST-095",
                     "reason": "Wiped active user session tokens, triggering massive secondary database stampede that overloaded primary DB CPU to 100%."
                 })
             elif "gateway" in title_lower or "504" in title_lower or "ingress" in title_lower:
                 failed_approaches.append({
                     "solution": "Unbounded increase of gateway proxy read timeout to 120s without horizontal pod scaling",
-                    "service": service_name or "api-gateway",
-                    "incident_number": "INC-2026-094",
+                    "service": service_name or "ingress-service",
+                    "incident_number": "INC-HIST-094",
                     "reason": "Exhausted edge ingress socket descriptors and blocked proxy threads, dropping subsequent incoming user requests."
                 })
             else:
